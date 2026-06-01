@@ -225,7 +225,7 @@ The model is trained on a curated dataset of **50+ diseases** with associated sy
 ## 👩‍💻 Author
 
 Maryum Afzal
-- GitHub: https://github.com/maryum048/disease-prediction/blob/main/README.md?plain=1
+- GitHub: https://github.com/maryum048/disease-prediction
 
 
 ---
