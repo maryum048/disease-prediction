@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSense AI — Disease Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ── CSS Variables ───────────────────────────────── */
+        :root {
+            --bg:         #0a0f1e;
+            --bg2:        #0f1729;
+            --panel:      #111827;
+            --border:     rgba(99,179,237,0.12);
+            --accent:     #38bdf8;
+            --accent2:    #818cf8;
+            --accent3:    #34d399;
+            --danger:     #f87171;
+            --text:       #e2e8f0;
+            --muted:      #64748b;
+            --card-glow:  0 0 40px rgba(56,189,248,0.06);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated Background ─────────────────────────── */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0;
+            background-image:
+                linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+
+        .bg-orb {
+            position: fixed; border-radius: 50%;
+            filter: blur(100px); pointer-events: none; z-index: 0;
+            animation: orb-drift 12s ease-in-out infinite alternate;
+        }
+        .orb1 { width:500px; height:500px; background:rgba(56,189,248,0.04); top:-100px; right:-100px; }
+        .orb2 { width:400px; height:400px; background:rgba(129,140,248,0.04); bottom:-80px; left:-80px; animation-delay:-6s; }
+
+        @keyframes orb-drift { from{transform:translate(0,0);} to{transform:translate(30px,40px);} }
+
+        /* ── Layout ──────────────────────────────────────── */
+        .wrapper { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:40px 20px 80px; }
+
+        /* ── Header ──────────────────────────────────────── */
+        header { text-align:center; margin-bottom:60px; animation: fade-down 0.7s ease both; }
+
+        .logo-badge {
+            display:inline-flex; align-items:center; gap:10px;
+            background: rgba(56,189,248,0.08);
+            border: 1px solid rgba(56,189,248,0.2);
+            border-radius: 50px; padding: 8px 20px;
+            font-size: 13px; color: var(--accent);
+            letter-spacing: 0.08em; text-transform: uppercase;
+            margin-bottom: 28px; font-family: 'Syne', sans-serif;
+        }
+        .logo-badge::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse-dot 2s infinite; }
+        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.2rem, 6vw, 3.6rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+        }
+        h1 span {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 1.05rem;
+            font-weight: 300;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ── Warning Banner ──────────────────────────────── */
+        .disclaimer {
+            background: rgba(248,113,113,0.06);
+            border: 1px solid rgba(248,113,113,0.2);
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 13px;
+            color: #fca5a5;
+            margin-bottom: 32px;
+            display: flex; align-items: center; gap: 12px;
+            animation: fade-down 0.7s ease 0.1s both;
+        }
+        .disclaimer-icon { font-size: 18px; flex-shrink:0; }
+
+        /* ── Main Card ───────────────────────────────────── */
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            box-shadow: var(--card-glow);
+            animation: fade-up 0.7s ease 0.2s both;
+            margin-bottom: 28px;
+        }
+
+        .card-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 20px;
+        }
+
+        /* ── Symptom Input ───────────────────────────────── */
+        .input-wrapper { position: relative; margin-bottom: 20px; }
+
+        textarea {
+            width: 100%;
+            min-height: 140px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none;
+            line-height: 1.6;
+        }
+        textarea::placeholder { color: var(--muted); }
+        textarea:focus {
+            border-color: rgba(56,189,248,0.4);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.08);
+        }
+
+        .char-count {
+            position: absolute; bottom: 12px; right: 16px;
+            font-size: 12px; color: var(--muted);
+            transition: color 0.3s;
+        }
+        .char-count.warn { color: var(--danger); }
+
+        /* ── Sample Symptoms ─────────────────────────────── */
+        .samples-label {
+            font-size: 12px; color: var(--muted);
+            margin-bottom: 10px; text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .samples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+
+        .sample-chip {
+            background: rgba(56,189,248,0.06);
+            border: 1px solid rgba(56,189,248,0.15);
+            border-radius: 50px;
+            padding: 6px 14px;
+            font-size: 13px;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .sample-chip:hover {
+            background: rgba(56,189,248,0.14);
+            border-color: rgba(56,189,248,0.35);
+            transform: translateY(-1px);
+        }
+
+        /* ── Submit Button ───────────────────────────────── */
+        .btn-predict {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .btn-predict:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(56,189,248,0.25);
+        }
+        .btn-predict:active:not(:disabled) { transform: translateY(0); }
+        .btn-predict:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-predict .btn-text { transition: opacity 0.2s; }
+        .btn-predict.loading .btn-text { opacity: 0; }
+
+        .spinner {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .btn-predict.loading .spinner { opacity: 1; }
+        .spin { width:20px; height:20px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Results ─────────────────────────────────────── */
+        #results { display: none; }
+        #results.show { display: block; animation: fade-up 0.5s ease both; }
+
+        .result-hero {
+            background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(99,102,241,0.08));
+            border: 1px solid rgba(56,189,248,0.2);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .result-label {
+            font-size: 12px; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.1em;
+            margin-bottom: 10px;
+        }
+
+        .result-disease {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 16px;
+            line-height: 1.1;
+        }
+
+        .confidence-bar-wrap { max-width: 300px; margin: 0 auto; }
+        .confidence-label {
+            display: flex; justify-content: space-between;
+            font-size: 13px; color: var(--muted); margin-bottom: 8px;
+        }
+        .confidence-track {
+            height: 8px; background: rgba(255,255,255,0.06);
+            border-radius: 50px; overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            border-radius: 50px;
+            width: 0%; transition: width 1s cubic-bezier(0.4,0,0.2,1) 0.3s;
+        }
+
+        /* ── Top 3 Grid ──────────────────────────────────── */
+        .top3-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+
+        @media (max-width: 600px) { .top3-grid { grid-template-columns: 1fr; } }
+
+        .top3-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 16px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .top3-card.rank1 { border-color: rgba(56,189,248,0.3); }
+
+        .rank-badge {
+            font-size: 11px; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.08em;
+            margin-bottom: 8px;
+        }
+        .top3-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.9rem; font-weight: 700;
+            margin-bottom: 8px; line-height: 1.3;
+        }
+        .top3-pct {
+            font-size: 1.3rem; font-weight: 300;
+            color: var(--accent2);
+        }
+
+        /* ── Symptoms Detected ───────────────────────────── */
+        .tags-section { margin-bottom: 20px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .tag {
+            background: rgba(52,211,153,0.08);
+            border: 1px solid rgba(52,211,153,0.2);
+            border-radius: 50px;
+            padding: 5px 12px;
+            font-size: 13px;
+            color: var(--accent3);
+        }
+
+        /* ── Error State ─────────────────────────────────── */
+        .error-box {
+            background: rgba(248,113,113,0.06);
+            border: 1px solid rgba(248,113,113,0.2);
+            border-radius: 14px;
+            padding: 20px;
+            color: #fca5a5;
+            font-size: 14px;
+            display: none;
+            animation: fade-up 0.3s ease;
+        }
+        .error-box.show { display: block; }
+
+        /* ── Animations ──────────────────────────────────── */
+        @keyframes fade-up   { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+        @keyframes fade-down { from{opacity:0;transform:translateY(-16px);} to{opacity:1;transform:translateY(0);} }
+
+        /* ── Footer ──────────────────────────────────────── */
+        footer {
+            text-align:center; color: var(--muted);
+            font-size:13px; margin-top:60px;
+            line-height:1.8;
+        }
+        footer a { color:var(--accent); text-decoration:none; }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
+
+<div class="wrapper">
+
+    <!-- Header -->
+    <header>
+        <div class="logo-badge">🧬 AI-Powered · Medical NLP</div>
+        <h1>Medi<span>Sense</span> AI</h1>
+        <p class="subtitle">Describe your symptoms in plain language — our BERT-powered model predicts the most likely condition.</p>
+    </header>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+        <span class="disclaimer-icon">⚠️</span>
+        <span><strong>Not a substitute for medical advice.</strong> This tool is for educational purposes only. Always consult a qualified healthcare professional for diagnosis and treatment.</span>
+    </div>
+
+    <!-- Input Card -->
+    <div class="card">
+        <div class="card-title">Describe Your Symptoms</div>
+
+        <div class="input-wrapper">
+            <textarea
+                id="symptom-input"
+                placeholder="e.g. I have been having high fever, severe headache, body aches and chills for the past 2 days..."
+                maxlength="1000"
+            ></textarea>
+            <span class="char-count" id="char-count">0 / 1000</span>
+        </div>
+
+        <div class="samples-label">Try a sample</div>
+        <div class="samples">
+            <span class="sample-chip" onclick="useSample('high fever chills body ache sweating headache fatigue')">🌡️ Malaria-like</span>
+            <span class="sample-chip" onclick="useSample('persistent cough chest pain shortness of breath fever night sweats weight loss')">🫁 Respiratory</span>
+            <span class="sample-chip" onclick="useSample('severe headache nausea vomiting sensitivity to light neck stiffness')">🧠 Neurological</span>
+            <span class="sample-chip" onclick="useSample('excessive thirst frequent urination fatigue blurred vision slow healing wounds')">💉 Metabolic</span>
+            <span class="sample-chip" onclick="useSample('rash fever joint pain nausea vomiting headache eye pain')">🔴 Dengue-like</span>
+        </div>
+
+        <button class="btn-predict" id="predict-btn" onclick="predict()">
+            <span class="btn-text">Analyze Symptoms</span>
+            <div class="spinner"><div class="spin"></div></div>
+        </button>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box" id="error-box"></div>
+
+    <!-- Results -->
+    <div id="results">
+
+        <!-- Hero Result -->
+        <div class="result-hero">
+            <div class="result-label">Most Likely Condition</div>
+            <div class="result-disease" id="result-disease">—</div>
+            <div class="confidence-bar-wrap">
+                <div class="confidence-label">
+                    <span>Confidence</span>
+                    <span id="conf-pct">0%</span>
+                </div>
+                <div class="confidence-track">
+                    <div class="confidence-fill" id="conf-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 3 -->
+        <div class="card">
+            <div class="card-title">Top 3 Predictions</div>
+            <div class="top3-grid" id="top3-grid"></div>
+        </div>
+
+        <!-- Symptoms Detected -->
+        <div class="card tags-section">
+            <div class="card-title">Symptoms Detected</div>
+            <div class="tags" id="tags-container"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<footer>
+    Built with 🤍 using <strong>BERT + Flask</strong> &nbsp;·&nbsp;
+    <a href="https://github.com/" target="_blank">View on GitHub</a> &nbsp;·&nbsp;
+    For educational purposes only
+</footer>
+
+<script>
+    // ── Character counter ──────────────────────────────────────────────
+    const textarea = document.getElementById('symptom-input');
+    const charCount = document.getElementById('char-count');
+
+    textarea.addEventListener('input', () => {
+        const len = textarea.value.length;
+        charCount.textContent = `${len} / 1000`;
+        charCount.classList.toggle('warn', len > 900);
+    });
+
+    // ── Sample click ───────────────────────────────────────────────────
+    function useSample(text) {
+        textarea.value = text;
+        charCount.textContent = `${text.length} / 1000`;
+        textarea.focus();
+    }
+
+    // ── Predict ────────────────────────────────────────────────────────
+    async function predict() {
+        const symptoms = textarea.value.trim();
+        const btn = document.getElementById('predict-btn');
+        const errorBox = document.getElementById('error-box');
+        const results = document.getElementById('results');
+
+        // Validation
+        if (symptoms.length < 5) {
+            showError('Please describe your symptoms in more detail.');
+            return;
+        }
+
+        // Loading state
+        btn.classList.add('loading');
+        btn.disabled = true;
+        errorBox.classList.remove('show');
+        results.classList.remove('show');
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symptoms })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                showError(data.error || 'Something went wrong. Please try again.');
+                return;
+            }
+
+            renderResults(data);
+
+        } catch (err) {
+            showError('Connection error. Make sure the server is running.');
+        } finally {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    }
+
+    // ── Render Results ─────────────────────────────────────────────────
+    function renderResults(data) {
+        // Main result
+        document.getElementById('result-disease').textContent = data.disease;
+        document.getElementById('conf-pct').textContent = `${data.confidence}%`;
+
+        // Animate confidence bar
+        setTimeout(() => {
+            document.getElementById('conf-fill').style.width = `${data.confidence}%`;
+        }, 100);
+
+        // Top 3
+        const grid = document.getElementById('top3-grid');
+        grid.innerHTML = '';
+        const ranks = ['🥇', '🥈', '🥉'];
+        data.top_predictions.forEach((p, i) => {
+            grid.innerHTML += `
+                <div class="top3-card ${i===0?'rank1':''}">
+                    <div class="rank-badge">${ranks[i]} Rank ${i+1}</div>
+                    <div class="top3-name">${p.disease}</div>
+                    <div class="top3-pct">${p.confidence}%</div>
+                </div>`;
+        });
+
+        // Symptom tags
+        const tags = document.getElementById('tags-container');
+        tags.innerHTML = data.symptoms_detected
+            .map(s => `<span class="tag">${s}</span>`)
+            .join('');
+
+        // Show
+        document.getElementById('results').classList.add('show');
+        document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    // ── Show Error ─────────────────────────────────────────────────────
+    function showError(msg) {
+        const box = document.getElementById('error-box');
+        box.textContent = '⚠️  ' + msg;
+        box.classList.add('show');
+        box.scrollIntoView({ behavior:'smooth' });
+    }
+
+    // ── Enter key submit ───────────────────────────────────────────────
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) predict();
+    });
+</script>
+
+</body>
+</html>

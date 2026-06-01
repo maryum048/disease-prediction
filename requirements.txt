@@ -1,0 +1,24 @@
+# ─────────────────────────────────────────────────────────────
+#  Disease Prediction Web App — Requirements
+#  Install: pip install -r requirements.txt
+# ─────────────────────────────────────────────────────────────
+
+# Web Framework
+flask==3.0.0
+flask-cors==4.0.0
+
+# Machine Learning
+scikit-learn==1.4.0
+numpy==1.26.4
+pandas==2.2.0
+
+# NLP & Text Processing
+nltk==3.8.1
+sentence-transformers==2.5.1   # BERT embeddings (MiniLM)
+
+# Utilities
+joblib==1.3.2
+python-dotenv==1.0.0
+
+# Optional: for faster inference
+# torch==2.2.0                 # Uncomment if using GPU
